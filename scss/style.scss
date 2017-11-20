@@ -1,0 +1,24 @@
+.container {
+   text-align: center;
+   font-family: 'Noto Sans', sans-serif;
+   svg {
+      background: url('https://raw.githubusercontent.com/hongyi0220/assets/master/Alpe%20d\'Huez%20map.png') no-repeat center/86% 80%;
+      background-position: 41px 50px;
+    
+      .plot {
+         &:hover {
+            fill: #8e44ad;
+         } 
+      }
+      .name {
+         font-size: .65em;
+      }
+      .legend-text {
+         font-size: .75em;
+      }
+      .axis-label {
+         font-size: .75em;
+      }
+   }
+}
+

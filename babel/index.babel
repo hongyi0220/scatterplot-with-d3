@@ -1,0 +1,154 @@
+class App extends React.Component {
+   constructor(props) {
+      super(props);
+      this.state = {
+         dataset: null
+      }
+      this.fetchData = this.fetchData.bind(this);
+      this.buildScatterplot = this.buildScatterplot.bind(this);
+      this.millisecondsToMinutesAndSeconds = this.millisecondsToMinutesAndSeconds.bind(this);
+   }
+   
+   millisecondsToMinutesAndSeconds(milsec) {
+      let seconds = Math.round(milsec / 1000);
+      const minutes = Math.floor(seconds / 60);
+      seconds %= 60;
+      return minutes + ':' + seconds;
+   }
+   
+   fetchData() {
+      const url = 'https://raw.githubusercontent.com/hongyi0220/ProjectReferenceData/master/cyclist-data.json';
+      fetch(url)
+         .then(response => response.json())
+         .then(responseJson => this.setState({ dataset: responseJson }, () => this.buildScatterplot(this.state.dataset)));
+   }
+   
+   buildScatterplot(dataset) {
+      const width = 1000;
+      const height = 500;
+      const padding = 50;
+      const radius = 7;
+
+      const svg = d3.select('.container')
+            .append('svg')
+            .attr('width', width)
+            .attr('height', height);
+      
+      const xScale = d3.scaleLinear()
+              .domain([d3.max(dataset, d => d.Seconds), d3.min(dataset, d => d.Seconds)])
+              .range([padding, width - (padding * 2)]);
+     
+      // Format place to rank
+      dataset.forEach((d, i) => {
+
+                 if (d.Place === 1) d.Rank = d.Place + 'st';
+                 else if (d.Place === 2) d.Rank = d.Place + 'nd';
+                 else if (d.Place === 3) d.Rank = d.Place + 'rd';
+                 else d.Rank = d.Place + 'th';
+
+              })
+      console.log(dataset);
+      const yScale = d3.scaleBand()
+              .domain(dataset.map(d => d.Rank))
+              .range([padding, height - padding]);
+      
+      svg.selectAll('circle')
+            .data(dataset)
+            .enter()
+            .append('circle')
+            .attr("r", radius)
+            .attr("cx", d => xScale(d.Seconds))
+            .attr("cy", d => yScale(d.Rank))
+            .attr('fill', d => {if (d.Doping) return '#e74c3c'})
+            .attr("class", 'plot')
+            .append('title')
+            .text(d => {return d.Doping})
+            // .on('mouseover', tip.show)
+            // .on('mouseout', tip.hide);
+            
+      
+      // This displays name of athlete of the scatterplot
+      svg.selectAll('text').data(dataset).enter()
+            .append('text')
+            .attr('class', 'name')
+            .text(d => d.Name)
+            .attr('x', d => xScale(d.Seconds) + radius)
+            .attr('y', d => yScale(d.Rank) + 4);
+      
+      const xAxis = d3.axisBottom(
+         d3.scaleBand()
+               .domain(dataset.map(d => {
+                  const bestTime = d3.max(dataset, d => d.Seconds);
+                  const milli = 1000;
+                  return this.millisecondsToMinutesAndSeconds((bestTime - d.Seconds) * milli)
+               }))
+               .range([padding, width - (padding * 2)])
+                                 );
+      
+      svg.append('g')
+         .attr('transform', 'translate(0,' + (height - padding) + ')')
+         .call(xAxis)
+      
+      const yAxis = d3.axisLeft(yScale);
+      
+      svg.append('g')
+         .attr('transform', 'translate(' + (padding - 10) + ',0)')
+         .call(yAxis);
+      
+      // Units
+      svg.append('text')
+            .text('Ranking')
+            .attr('class', 'axis-label')
+            .attr('x', -95)
+            .attr('y', 55)
+            .attr('transform', 'rotate(-90)');
+      
+      svg.append('text')
+            .attr('class', 'axis-label')
+            .text('Minutes behind 1st place')
+            .attr('x', width - padding * 4.81)
+            .attr('y', height - padding - 5);
+    const legendX = 650;
+    const legendY = 250;
+      // Graph legend
+      svg.append('circle')
+         .attr('class', 'legend-circle')
+         .attr('r', radius)
+         .attr('cx', legendX)
+         .attr('cy', legendY)
+         .attr('fill', '#e74c3c');
+      svg.append('text')
+         .attr('class', 'legend-text')
+         .text('Cyclist with doping allegations')
+         .attr('x', legendX + 10)
+         .attr('y', legendY + 3);
+      svg.append('circle')
+         .attr('class', 'legend-circle')
+         .attr('r', radius)
+         .attr('cx', legendX)
+         .attr('cy', legendY + 18);
+      svg.append('text')
+         .attr('class', 'legend-text')
+         .text('Clean')
+         .attr('x', legendX + 10)
+         .attr('y', legendY + 22);
+   }
+   
+   componentDidMount() {
+      this.fetchData();
+   }
+   
+   render() {
+      return (
+         <div className="container">
+            <h1>Doping in Professional Cycling</h1>
+            <h2>Alpe d'Huez Tour de France: Best 35</h2>
+         </div>
+      );
+   }
+}
+
+ReactDOM.render(
+   <App />,
+   document.getElementById("app")
+);
